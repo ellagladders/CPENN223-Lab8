@@ -1,6 +1,6 @@
 ﻿// Lab 8
-// Student name:
-// Student number:
+// Student name: Ella Gladders
+// Student number: 78754249
 
 using System;
 using System.Collections.Generic;
@@ -33,8 +33,30 @@ public static class EmgLinqAnalyzer
         IEnumerable<Sample> samples,
         IReadOnlyDictionary<string, Calibration> calibration)
     {
-        // TODO: Implement using Where and Select (no loops).
-        throw new NotImplementedException();
+        // checks for null inputs
+        if (samples == null || calibration == null) 
+        {
+        throw new ArgumentException("Inputs cannot be null.");
+        } 
+
+        // check every supplied calibration 
+        if (calibration.Values.Any(c => !double.IsFinite(c.Offset) || !double.IsFinite(c.Gain) || c.Gain <= 0))
+        {
+            throw new ArgumentException("Invalid calibration values.");
+        }
+
+        return samples 
+            // filter out samples without calibration
+            .Where(s => calibration.ContainsKey(s.Sensor)) 
+            .Select(s => 
+            {
+                // transform each retained sample
+                Calibration c = calibration[s.Sensor];
+                // retrieve the calibration from the dictonary 
+                double calibratedValue = (s.Value - c.Offset) * c.Gain;
+                return new Sample(s.Sensor, s.Time, calibratedValue);;
+            })
+            .ToList();
     }
 
     public static List<SensorStats> SummarizeSensors(
